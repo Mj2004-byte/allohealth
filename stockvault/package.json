@@ -11,10 +11,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node --project tsconfig.seed.json prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force && npm run prisma:seed"
+    "db:reset": "prisma migrate reset --force && npm run prisma:seed",
+    "db:setup": "prisma generate && prisma migrate dev --name init && npm run prisma:seed"
   },
   "prisma": {
-       "schema": "prisma/schema.prisma",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

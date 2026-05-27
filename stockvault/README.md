@@ -318,26 +318,122 @@ npm run lint              # Run ESLint
 
 ## 🚀 Deployment to Vercel
 
-1. **Push code to GitHub**
-   ```bash
-   git push origin main
-   ```
+### Prerequisites
+- GitHub account with repository
+- PostgreSQL database (Supabase recommended)
+- Groq API key ([console.groq.com](https://console.groq.com))
 
-2. **Connect to Vercel**
-   - Go to [vercel.com/new](https://vercel.com/new)
-   - Import GitHub repository
-   - Add environment variables in Settings
-   - Deploy!
+### Step 1: Database Setup (Supabase)
 
-3. **Setup Cron Jobs**
-   - Vercel automatically runs cron jobs defined in `vercel.json`
-   - Ensure `CRON_SECRET` is set in production environment
+1. Create account at [supabase.com](https://supabase.com)
+2. Create new PostgreSQL project
+3. Copy connection string:
+   - **DATABASE_URL**: Use connection pooler (port 6543)
+   - **DIRECT_URL**: Use direct connection (port 5432)
+4. Store these securely
 
-4. **Database**
-   - Use Supabase (PostgreSQL) for production
-   - Enable connection pooler for serverless
-   - Run migrations: `npx prisma migrate deploy`
-   - Seed if needed: Run seed endpoint or script
+### Step 2: Push to GitHub
+
+```bash
+git add .
+git commit -m "Prepare for Vercel deployment"
+git push origin main
+```
+
+### Step 3: Connect to Vercel
+
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Select "Import Git Repository"
+3. Find and import your GitHub repository
+4. Choose "Next.js" as framework preset (auto-detected)
+5. Click "Deploy"
+
+### Step 4: Add Environment Variables
+
+In Vercel dashboard, go to **Settings → Environment Variables**:
+
+```
+DATABASE_URL = postgresql://user:password@host:6543/database?schema=public
+DIRECT_URL = postgresql://user:password@host:5432/database?schema=public
+GROQ_API_KEY = your-groq-api-key-here
+CRON_SECRET = your-unique-secret-token-here
+RESERVATION_EXPIRY_MINUTES = 10
+NODE_ENV = production
+```
+
+⚠️ **Important**: 
+- Use **connection pooler** for DATABASE_URL (port 6543)
+- Use **direct connection** for DIRECT_URL (port 5432)
+- This is critical for serverless functions
+
+### Step 5: Run Database Migration
+
+After first deployment, run migrations:
+
+```bash
+# Option A: Using Vercel CLI
+vercel env pull
+npx prisma migrate deploy
+
+# Option B: Manual via Supabase Dashboard
+# Use Supabase SQL editor to run migration
+```
+
+### Step 6: Verify Cron Jobs
+
+Vercel automatically runs crons defined in `vercel.json`:
+- Runs every 5 minutes
+- Cleans up expired reservations
+- Requires valid `CRON_SECRET` header
+
+**Test cron job**:
+```bash
+curl https://your-app.vercel.app/api/cron/cleanup \
+  -H "Authorization: Bearer your-cron-secret"
+```
+
+Expected response:
+```json
+{
+  "expired": 0,
+  "timestamp": "2024-01-20T10:30:00Z"
+}
+```
+
+### Troubleshooting Deployment
+
+**Build fails with "DATABASE_URL not found"**
+- Ensure DATABASE_URL is in Vercel environment variables
+- Redeploy after adding env vars
+
+**Cron job returns 401 Unauthorized**
+- Verify CRON_SECRET matches in Vercel
+- Check cron secret is not empty
+
+**Chat API returns 502**
+- Verify GROQ_API_KEY is valid and has quota
+- Check network requests in browser DevTools
+
+**Database connection timeout**
+- Ensure connection pooler URL is used
+- Check Supabase firewall allows Vercel IPs
+- Verify DATABASE_URL syntax is correct
+
+### Optional: Using Vercel CLI for Local Testing
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Pull environment variables
+vercel env pull
+
+# Test build locally
+npm run build
+
+# Start production build
+npm start
+```
 
 ## ⚡ Performance Optimizations
 
