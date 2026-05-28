@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'llama3-70b-8192',
+        model: 'mixtral-8x7b-32768',
         messages: [
           {
             role: 'system',
